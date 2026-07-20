@@ -11,6 +11,7 @@ ip_distance = st.number_input("Distance to IP (NM)", min_value=0.0, value=5.0, s
 tgt_distance = st.number_input("IP → TGT Distance (NM)", min_value=0.0, value=10.0, step=0.1)
 
 # --- Display Placeholders ---
+speed_placeholder = st.empty()
 countdown_placeholder = st.empty()
 wind_placeholder = st.empty()
 slowdown_placeholder = st.empty()
@@ -20,12 +21,13 @@ stop_flag = st.session_state.get("stop_flag", False)
 
 def start_countdown():
     st.session_state.stop_flag = False
-    interval_sec = 360 / speed  # Seconds per 0.1 NM
 
     current = ip_distance
     restarted = False
 
-    # Generate one random wind report for the first leg
+    current_speed = speed
+    interval_sec = 360 / current_speed
+
     wind_type = random.choice(["Headwind", "Tailwind"])
     wind_speed = random.randint(10, 20)
 
@@ -33,13 +35,18 @@ def start_countdown():
     slowdown_displayed = False
 
     while True:
+
         if st.session_state.stop_flag:
             countdown_placeholder.markdown("## ⏹ Countdown Stopped")
             wind_placeholder.empty()
             slowdown_placeholder.empty()
+            speed_placeholder.empty()
             break
 
-        # Display current distance
+        # Display current speed
+        speed_placeholder.markdown(f"### Airspeed: **{current_speed:.0f} KTAS**")
+
+        # Display distance
         countdown_placeholder.markdown(f"# {current:.1f} NM")
 
         # Wind call at 3 NM
@@ -49,35 +56,40 @@ def start_countdown():
             )
             wind_displayed = True
 
-        # Slowdown call at 8 NM AFTER passing the IP
+        # Slowdown at 8 NM after IP
         if restarted and not slowdown_displayed and round(current, 1) == 8.0:
             slowdown_placeholder.markdown("## ⚠️ SLOW DOWN!")
+
+            # Automatically change speed to 140 KTAS
+            current_speed = 140
+            interval_sec = 360 / current_speed
+
             slowdown_displayed = True
 
         time.sleep(interval_sec)
         current = round(current - 0.1, 1)
 
-        # Transition from IP countdown to Target countdown
-        if current < 0:
-            if not restarted:
-                current = tgt_distance
-                restarted = True
+        # Switch from IP leg to target leg
+        if not restarted and current < 0:
+            current = tgt_distance
+            restarted = True
 
-                # Reset displays for target run
-                wind_placeholder.empty()
-                slowdown_placeholder.empty()
+            wind_placeholder.empty()
+            slowdown_placeholder.empty()
 
-                # Generate a new random wind call for the target run
-                wind_type = random.choice(["Headwind", "Tailwind"])
-                wind_speed = random.randint(10, 20)
+            wind_type = random.choice(["Headwind", "Tailwind"])
+            wind_speed = random.randint(10, 20)
 
-                wind_displayed = False
-                slowdown_displayed = False
-            else:
-                countdown_placeholder.markdown("# ✅ Complete")
-                wind_placeholder.empty()
-                slowdown_placeholder.empty()
-                break
+            wind_displayed = False
+            slowdown_displayed = False
+
+        # End only after reaching -3 NM on target run
+        elif restarted and current < -3.0:
+            countdown_placeholder.markdown("# ✅ Complete")
+            wind_placeholder.empty()
+            slowdown_placeholder.empty()
+            speed_placeholder.empty()
+            break
 
 
 # --- Buttons ---
