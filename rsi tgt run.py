@@ -6,7 +6,7 @@ st.set_page_config(page_title="Approach Countdown", layout="centered")
 st.title("✈️ Bomb Run Timing")
 
 # --- User Inputs ---
-speed = st.number_input("Speed (KTAS)", min_value=1.0, value=120.0, step=1.0)
+speed = st.number_input("Speed (KTAS)", min_value=1.0, value=240.0, step=1.0)
 ip_distance = st.number_input("Distance to IP (NM)", min_value=0.0, value=5.0, step=0.1)
 tgt_distance = st.number_input("IP → TGT Distance (NM)", min_value=0.0, value=10.0, step=0.1)
 
